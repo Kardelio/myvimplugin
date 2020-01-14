@@ -2,6 +2,9 @@ nnoremap <buffer> <localleader>b :call AllMapsToSplit()<cr>
 nnoremap <buffer> <localleader>t :call CreateTitle()<cr>
 nnoremap <buffer> <localleader>J :call MakeJson()<cr>
 nnoremap <buffer> <localleader>e :call ConvertEcho()<cr>
+nnoremap <buffer> tt :call MakeTodoItem()<cr>
+
+":command! -nargs=1 Silent execute ':silent !'.<q-args> | execute ':redraw!'
 
 function! AllMapsToSplit()
     redir @a
@@ -46,4 +49,13 @@ endfunction
 
 function! ConvertEcho()
     echom "Converting echos..."
+    normal V
+    execute 's/echo/printf/g'
 endfunction
+
+function! MakeTodoItem()
+    let l:line=getline('.')
+    echom "Making a TODO item out of: ".l:line." --"
+    silent execute '!todo "'.l:line.'"' | execute ':redraw!'
+endfunction
+
