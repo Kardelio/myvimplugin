@@ -2,6 +2,8 @@ nnoremap <buffer> <localleader>b :call AllMapsToSplit()<cr>
 nnoremap <buffer> <localleader>t :call CreateTitle()<cr>
 nnoremap <buffer> <localleader>J :call MakeJson()<cr>
 nnoremap <buffer> <localleader>e :call ConvertEcho()<cr>
+nnoremap <buffer> <localleader>f :call WordToFiglet()<cr>
+
 nnoremap <buffer> tt :call MakeTodoItem()<cr>
 
 ":command! -nargs=1 Silent execute ':silent !'.<q-args> | execute ':redraw!'
@@ -14,6 +16,11 @@ function! AllMapsToSplit()
     normal! "ap
     set buftype=nofile
     nnoremap <buffer> q <esc>:q<cr>
+endfunction
+
+function! WordToFiglet()
+    let l:line=getline('.')
+    silent execute '.!figlet "'.l:line.'"'
 endfunction
 
 " Notes
