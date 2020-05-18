@@ -1,8 +1,13 @@
 nnoremap <buffer> <localleader>b :call AllMapsToSplit()<cr>
 nnoremap <buffer> <localleader>t :call CreateTitle()<cr>
+nnoremap <buffer> <localleader>u :call CreateUnderline()<cr>
 nnoremap <buffer> <localleader>J :call MakeJson()<cr>
 nnoremap <buffer> <localleader>e :call ConvertEcho()<cr>
 nnoremap <buffer> <localleader>f :call WordToFiglet()<cr>
+
+inoremap :tick: ✅
+inoremap :skull: 💀
+inoremap :cross: ❌
 
 nnoremap <buffer> tt :call MakeTodoItem()<cr>
 
@@ -29,6 +34,7 @@ function! CreateTitle()
     let l:amount=50
     normal VU"eyy
     "get lenght of string but it includes newline char
+    "@e is at buffer e thats where the line above copies to
     let l:actlength=(strlen(@e) -1)
     let l:remain=(l:amount - l:actlength)
     let l:half=((l:remain / 2) - 1)
@@ -45,6 +51,26 @@ function! CreateTitle()
         normal A=
     endif
     normal o50i=
+endfunction
+
+" Underline (-u) 
+" Creates a configurable smaller title
+function! CreateUnderline()
+    normal ^"ey$
+    let l:side=3
+    "★ ┸ ○ ●
+    let l:character="-"
+    let l:undercharacter="┴"
+    let l:actlength=(strlen(@e) -1)
+    let l:bottomlength=l:actlength + l:side + l:side + 3
+    normal "_dd
+    normal "ep
+    normal I 
+    normal A 
+    execute "normal! 0".l:side."i".l:character
+    execute "normal! $".l:side."A".l:character
+    normal o
+    execute "normal! ".l:bottomlength."i".l:undercharacter
 endfunction
 
 function! MakeJson()
@@ -65,4 +91,6 @@ function! MakeTodoItem()
     echom "Making a TODO item out of: ".l:line." --"
     silent execute '!todo "'.l:line.'"' | execute ':redraw!'
 endfunction
+
+
 
