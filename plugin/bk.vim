@@ -1,6 +1,7 @@
 nnoremap <buffer> <localleader>b :call AllMapsToSplit()<cr>
 nnoremap <buffer> <localleader>t :call CreateTitle()<cr>
 nnoremap <buffer> <localleader>u :call CreateUnderline()<cr>
+nnoremap <buffer> <localleader>sf :call CreateSmallFiglet()<cr>
 nnoremap <buffer> <localleader>J :call MakeJson()<cr>
 nnoremap <buffer> <localleader>e :call EchoOutWordSay()<cr>
 vnoremap <buffer> <localleader>e :<c-u>call SelectionEchoOutWordSay()<cr>
@@ -42,6 +43,13 @@ function! AllMapsToSplit()
     normal! "ap
     set buftype=nofile
     nnoremap <buffer> q <esc>:q<cr>
+endfunction
+
+function! CreateSmallFiglet()
+    if executable('figlet')
+        let l:line=getline('.')
+        silent execute '.!figlet -f cybermedium "'.l:line.'"'
+    endif
 endfunction
 
 function! WordToFiglet()
