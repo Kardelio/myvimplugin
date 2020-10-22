@@ -1,16 +1,16 @@
-nnoremap <buffer> <localleader>b :call AllMapsToSplit()<cr>
-nnoremap <buffer> <localleader>w :call ToggleWrap()<cr>
-nnoremap <buffer> <localleader>t :call CreateTitle()<cr>
-nnoremap <buffer> <localleader>u :call CreateUnderline()<cr>
-nnoremap <buffer> <localleader>sf :call CreateSmallFiglet()<cr>
-nnoremap <buffer> <localleader>J :call MakeJson()<cr>
-nnoremap <buffer> <localleader>X :call MakeXML()<cr>
-nnoremap <buffer> <localleader>e :call EchoOutWordSay()<cr>
-vnoremap <buffer> <localleader>e :<c-u>call SelectionEchoOutWordSay()<cr>
-nnoremap <buffer> <localleader>f :call WordToFiglet()<cr>
-nnoremap <buffer> <localleader>de :call TranslateToGerman()<cr>
-nnoremap <buffer> <localleader>en :call TranslateToEnglish()<cr>
-nnoremap <buffer> tt :call MakeTodoItem()<cr>
+nnoremap <localleader>b :call AllMapsToSplit()<cr>
+nnoremap <localleader>w :call ToggleWrap()<cr>
+nnoremap <localleader>t :call CreateTitle()<cr>
+nnoremap <localleader>u :call CreateUnderline()<cr>
+nnoremap <localleader>sf :call CreateSmallFiglet()<cr>
+nnoremap <localleader>J :call MakeJson()<cr>
+nnoremap <localleader>X :call MakeXML()<cr>
+nnoremap <localleader>e :call EchoOutWordSay()<cr>
+vnoremap <localleader>e :<c-u>call SelectionEchoOutWordSay()<cr>
+nnoremap <localleader>f :call WordToFiglet()<cr>
+nnoremap <localleader>de :call TranslateToGerman()<cr>
+nnoremap <localleader>en :call TranslateToEnglish()<cr>
+nnoremap tt :call MakeTodoItem()<cr>
 
 " IMPORTANT only works currently on files in the CWD
 " :call Peak("index.js")
