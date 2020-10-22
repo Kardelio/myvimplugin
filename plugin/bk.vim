@@ -1,8 +1,10 @@
 nnoremap <buffer> <localleader>b :call AllMapsToSplit()<cr>
+nnoremap <buffer> <localleader>w :call ToggleWrap()<cr>
 nnoremap <buffer> <localleader>t :call CreateTitle()<cr>
 nnoremap <buffer> <localleader>u :call CreateUnderline()<cr>
 nnoremap <buffer> <localleader>sf :call CreateSmallFiglet()<cr>
 nnoremap <buffer> <localleader>J :call MakeJson()<cr>
+nnoremap <buffer> <localleader>X :call MakeXML()<cr>
 nnoremap <buffer> <localleader>e :call EchoOutWordSay()<cr>
 vnoremap <buffer> <localleader>e :<c-u>call SelectionEchoOutWordSay()<cr>
 nnoremap <buffer> <localleader>f :call WordToFiglet()<cr>
@@ -10,12 +12,35 @@ nnoremap <buffer> <localleader>de :call TranslateToGerman()<cr>
 nnoremap <buffer> <localleader>en :call TranslateToEnglish()<cr>
 nnoremap <buffer> tt :call MakeTodoItem()<cr>
 
+" IMPORTANT only works currently on files in the CWD
+" :call Peak("index.js")
+" Use this function to open the file for 15 seconds then close it
+" giving the player the time to cover their screen and hit ENTER 
+" when the screen is fully covered...
+function! Peak(file)
+    execute 'edit ' . a:file
+    redraw
+    echom "You have 15 seconds to look at the code..."
+    execute 'sleep 15'
+    bd
+    redraw
+    echom "Are you ready to play??"
+    sleep 2
+    echom "Please COVER YOUR SCREEN NOW and press ENTER when you are ready..."
+    sleep 2
+    let l:ans = input("Press Enter to re-open the file... GOOD LUCK")
+    execute 'edit ' . a:file
+endfunction
+
 "NOTE: function with ! would silently replace a function that already exists
 "with that name, if you dont have the bang and another function with the same
 "name exists then an error is thrown
 
 " What is this ben? vvv
 ":command! -nargs=1 Silent execute ':silent !'.<q-args> | execute ':redraw!'"
+function! ToggleWrap()
+    set wrap!
+endfunction
 
 function! TranslateToEnglish()
     if executable('trans')
@@ -102,6 +127,12 @@ function! CreateUnderline()
     execute "normal! $".l:side."A".l:character
     normal o
     execute "normal! ".l:bottomlength."i".l:undercharacter
+endfunction
+
+function! MakeXML()
+    .!xmllint --format --recover 
+    set foldmethod=syntax
+    set syntax=xml
 endfunction
 
 function! MakeJson()
