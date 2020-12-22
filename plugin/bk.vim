@@ -12,12 +12,21 @@ nnoremap <localleader>de :call TranslateToGerman()<cr>
 nnoremap <localleader>en :call TranslateToEnglish()<cr>
 nnoremap tt :call MakeTodoItem()<cr>
 
+"augroup mygroup 
+"    autocmd!
+"    autocmd CursorMoved,CursorMovedI * call s:cursor_moved() 
+"augroup END 
+"
+"function! s:cursor_moved() abort 
+"    echom "cursor moved" 
+"endfunction 
+
 " IMPORTANT only works currently on files in the CWD
 " :call Peak("index.js")
 " Use this function to open the file for 15 seconds then close it
 " giving the player the time to cover their screen and hit ENTER 
 " when the screen is fully covered...
-function! Peak(file)
+function! Peak(file) abort
     execute 'edit ' . a:file
     redraw
     echom "You have 15 seconds to look at the code..."
@@ -40,6 +49,11 @@ endfunction
 ":command! -nargs=1 Silent execute ':silent !'.<q-args> | execute ':redraw!'"
 function! ToggleWrap()
     set wrap!
+endfunction
+
+function! LineBreak()
+   " i+++==============================================================================================+++<esc>
+   " i+++==============================================================================================+++<esc>
 endfunction
 
 function! TranslateToEnglish()
@@ -70,7 +84,10 @@ function! AllMapsToSplit()
     nnoremap <buffer> q <esc>:q<cr>
 endfunction
 
-function! CreateSmallFiglet()
+"abort
+"at end of function statement stops execution if any line fails
+"usual behaviour is that vim continues past failing lines
+function! CreateSmallFiglet() abort
     if executable('figlet')
         let l:line=getline('.')
         silent execute '.!figlet -f cybermedium "'.l:line.'"'
