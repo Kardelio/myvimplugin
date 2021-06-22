@@ -10,6 +10,7 @@ vnoremap <localleader>e :<c-u>call SelectionEchoOutWordSay()<cr>
 nnoremap <localleader>f :call WordToFiglet()<cr>
 nnoremap <localleader>de :call TranslateToGerman()<cr>
 nnoremap <localleader>en :call TranslateToEnglish()<cr>
+nnoremap <localleader>m :call MakeFoldMarker()<cr>
 nnoremap tt :call MakeTodoItem()<cr>
 
 "augroup mygroup 
@@ -52,8 +53,8 @@ function! ToggleWrap()
 endfunction
 
 function! LineBreak()
-   " i+++==============================================================================================+++<esc>
-   " i+++==============================================================================================+++<esc>
+    " i+++==============================================================================================+++<esc>
+    " i+++==============================================================================================+++<esc>
 endfunction
 
 function! TranslateToEnglish()
@@ -182,9 +183,18 @@ endfunction
 
 function! MakeTodoItem()
     let l:line=getline('.')
-    echom "Making a TODO item out of: ".l:line." --"
-    silent execute '!todo "'.l:line.'"' | execute ':redraw!'
+    silent execute '!todo -l 6 "'.l:line.'"' | execute ':redraw!'
+    echom "Made a todo item out of: ".l:line
 endfunction
 
+function! MakeFoldMarker()
+    normal i# ===== {{{
+    normal ooi#}}}
+    normal OO
+    execute "normal! i\<tab>"
+    set foldmethod=marker
+    normal kk^f=
+    "nnoremap <leader>m i# ___ {{{<esc>o#}}}<esc>O<tab><esc>
+endfunction
 
 
