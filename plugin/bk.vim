@@ -1,3 +1,4 @@
+nnoremap <localleader>y :call CopyFileName()<cr>
 nnoremap <localleader>b :call AllMapsToSplit()<cr>
 nnoremap <localleader>w :call ToggleWrap()<cr>
 nnoremap <localleader>t :call CreateTitle()<cr>
@@ -11,7 +12,10 @@ nnoremap <localleader>f :call WordToFiglet()<cr>
 nnoremap <localleader>de :call TranslateToGerman()<cr>
 nnoremap <localleader>en :call TranslateToEnglish()<cr>
 nnoremap <localleader>m :call MakeFoldMarker()<cr>
+nnoremap <localleader>= :call MakeNotes()<cr>
+nnoremap <localleader>d :call ConvertToHumanTime()<cr>
 nnoremap tt :call MakeTodoItem()<cr>
+nnoremap tp :call MakeTodoItemHighPriority()<cr>
 
 "augroup mygroup 
 "    autocmd!
@@ -46,15 +50,34 @@ endfunction
 "with that name, if you dont have the bang and another function with the same
 "name exists then an error is thrown
 
+
+function! MakeNotes()
+    echom "Notes"
+    r~/TEMPLATE_NOTES.txt
+endfunction
+
 " What is this ben? vvv
 ":command! -nargs=1 Silent execute ':silent !'.<q-args> | execute ':redraw!'"
 function! ToggleWrap()
     set wrap!
 endfunction
 
+function! CopyFileName()
+    echom @%
+    let @* = expand("%")
+endfunction
+
 function! LineBreak()
     " i+++==============================================================================================+++<esc>
     " i+++==============================================================================================+++<esc>
+endfunction
+
+function! ConvertToHumanTime()
+    let l:wordUnderCursor = expand("<cword>")
+    "echom "Word on: " . l:wordUnderCursor . ""
+    let l:cmd = "gdate -d \"@" . l:wordUnderCursor . "\""
+    let l:human = system("" . l:cmd)
+    echom "Time: " . l:human . ""
 endfunction
 
 function! TranslateToEnglish()
@@ -148,7 +171,8 @@ function! CreateUnderline()
 endfunction
 
 function! MakeXML()
-    .!xmllint --format --recover 
+    ":%! xmllint --format -
+    .!xmllint --format -
     set foldmethod=syntax
     set syntax=xml
 endfunction
@@ -185,6 +209,12 @@ function! MakeTodoItem()
     let l:line=getline('.')
     silent execute '!todo -l 6 "'.l:line.'"' | execute ':redraw!'
     echom "Made a todo item out of: ".l:line
+endfunction
+
+function! MakeTodoItemHighPriority()
+    let l:line=getline('.')
+    silent execute '!todo -l 6 -p 1 "'.l:line.'"' | execute ':redraw!'
+    echom "Made a PRIORITY todo item out of: ".l:line
 endfunction
 
 function! MakeFoldMarker()
