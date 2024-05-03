@@ -5,9 +5,12 @@ nnoremap <localleader>t :call CreateTitle()<cr>
 nnoremap <localleader>u :call CreateUnderline()<cr>
 nnoremap <localleader>sf :call CreateSmallFiglet()<cr>
 nnoremap <localleader>J :call MakeJson()<cr>
+nnoremap <localleader>ca :call CalculateLineBC()<cr>
 nnoremap <localleader>X :call MakeXML()<cr>
 nnoremap <localleader>e :call EchoOutWordSay()<cr>
 vnoremap <localleader>e :<c-u>call SelectionEchoOutWordSay()<cr>
+vnoremap <localleader>6 :<c-u>call Base64EncodeLines()<cr>
+vnoremap <localleader>0 :<c-u>call Base64DecodeLines()<cr>
 nnoremap <localleader>f :call WordToFiglet()<cr>
 nnoremap <localleader>de :call TranslateToGerman()<cr>
 nnoremap <localleader>en :call TranslateToEnglish()<cr>
@@ -49,7 +52,6 @@ endfunction
 "NOTE: function with ! would silently replace a function that already exists
 "with that name, if you dont have the bang and another function with the same
 "name exists then an error is thrown
-
 
 function! MakeNotes()
     echom "Notes"
@@ -129,7 +131,7 @@ endfunction
 "   l: is scoped to a function
 function! CreateTitle()
     let l:amount=50
-    normal VU"eyy
+    normal! VU"eyy
     "get lenght of string but it includes newline char
     "@e is at buffer e thats where the line above copies to
     let l:actlength=(strlen(@e) -1)
@@ -138,7 +140,7 @@ function! CreateTitle()
     normal "_dd
     normal o
     normal 50i=
-    normal "ep
+    normal! "ep
     normal I 
     normal A 
     execute "normal! 0". l:half . "i=" 
@@ -178,18 +180,57 @@ function! MakeXML()
 endfunction
 
 function! MakeJson()
-    .!jq .
+    "set foldmethod=syntax
+    "set syntax=json
+    :%!jq
+    ":.!jq .
+    "noh
+    echom "Converted to JSON nicely"
     set foldmethod=syntax
     set syntax=json
-    noh
+    "normal u
 endfunction
 
 function! EchoOutWordSay()
     let l:line = getline('.')
-    let l:res = system('say -v Alex "'.l:line.'"')
+    let l:res = system('say "'.l:line.'"')
     "echom "Converting echos..."
     "normal V
     "execute 's/echo/printf/g'
+endfunction
+
+function! Base64DecodeLines()
+    let [line_start, column_start] = getpos("'<")[1:2]
+    let [line_end, column_end] = getpos("'>")[1:2]
+    let lines = getline(line_start, line_end)
+    if len(lines) == 0
+        return ''
+    endif
+    let lines[-1] = lines[-1][: column_end - 2]
+    let lines[0] = lines[0][column_start - 1:]
+    let l:joined = join(lines, "\n")
+    for i in lines
+        let l:out = system('echo "'.i.'" | base64 -d')
+        call append(line('$'),split(l:out,"\n"))
+    endfor
+    return l:joined
+endfunction
+
+function! Base64EncodeLines()
+    let [line_start, column_start] = getpos("'<")[1:2]
+    let [line_end, column_end] = getpos("'>")[1:2]
+    let lines = getline(line_start, line_end)
+    if len(lines) == 0
+        return ''
+    endif
+    let lines[-1] = lines[-1][: column_end - 2]
+    let lines[0] = lines[0][column_start - 1:]
+    let l:joined = join(lines, "\n")
+    for i in lines
+        let l:out = system('echo "'.i.'" | base64')
+        call append(line('$'),split(l:out,"\n"))
+    endfor
+    return l:joined
 endfunction
 
 function! SelectionEchoOutWordSay()
@@ -202,7 +243,15 @@ function! SelectionEchoOutWordSay()
     let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
     let lines[0] = lines[0][column_start - 1:]
     let l:say = join(lines, " ")
-    let l:res = system('say -v Alex "'.l:say.'"')
+    let l:res = system('say "'.l:say.'"')
+endfunction
+
+function! CalculateLineBC()
+    let l:line=getline('.')
+    let l:answer= system('echo "'.l:line.'" | bc | sed "s/[[:space:]]//g"')
+    normal o
+    echom "---".l:answer."---"
+    execute '.!echo '.l:answer
 endfunction
 
 function! MakeTodoItem()
