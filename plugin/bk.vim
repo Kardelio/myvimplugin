@@ -17,6 +17,7 @@ nnoremap <localleader>en :call TranslateToEnglish()<cr>
 nnoremap <localleader>m :call MakeFoldMarker()<cr>
 nnoremap <localleader>= :call MakeNotes()<cr>
 nnoremap <localleader>d :call ConvertToHumanTime()<cr>
+vnoremap tt :<c-u>call MakeTodoItems()<cr>
 nnoremap tt :call MakeTodoItem()<cr>
 nnoremap tp :call MakeTodoItemHighPriority()<cr>
 
@@ -147,7 +148,7 @@ function! CreateTitle()
     execute "normal! $". l:half . "A=" 
     "modulo to get remainer for even/odd figuring
     if(fmod(l:actlength,2) > 0)
-        normal A=
+    normal A=
     endif
     normal o50i=
 endfunction
@@ -254,6 +255,21 @@ function! CalculateLineBC()
     execute '.!echo '.l:answer
 endfunction
 
+function! MakeTodoItems()
+    let [line_start, column_start] = getpos("'<")[1:2]
+    let [line_end, column_end] = getpos("'>")[1:2]
+    let lines = getline(line_start, line_end)
+    if len(lines) == 0
+        return ''
+    endif
+    let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
+    let lines[0] = lines[0][column_start - 1:]
+    for i in lines
+        silent execute '!todo -l 6 "'.i.'"' | execute ':redraw!'
+    endfor
+    echom "Done"
+endfunction
+
 function! MakeTodoItem()
     let l:line=getline('.')
     silent execute '!todo -l 6 "'.l:line.'"' | execute ':redraw!'
@@ -268,7 +284,7 @@ endfunction
 
 function! MakeFoldMarker()
     normal i# ===== {{{
-    normal ooi#}}}
+            normal ooi#}}}
     normal OO
     execute "normal! i\<tab>"
     set foldmethod=marker
