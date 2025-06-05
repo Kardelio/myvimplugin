@@ -1,7 +1,10 @@
 nnoremap <localleader>y :call CopyFileName()<cr>
+nnoremap <localleader>o :call OpenFileToEditOnLine()<cr>
 nnoremap <localleader>b :call AllMapsToSplit()<cr>
 nnoremap <localleader>w :call ToggleWrap()<cr>
 nnoremap <localleader>t :call CreateTitle()<cr>
+vnoremap <silent> <localleader>t :<C-u>call <SID>RunOnceProcessVisualSelection()<cr>
+"vnoremap <localleader>t :call CreateVisualTreeFromSelection()<cr>
 nnoremap <localleader>u :call CreateUnderline()<cr>
 nnoremap <localleader>sf :call CreateSmallFiglet()<cr>
 nnoremap <localleader>J :call MakeJson()<cr>
@@ -70,6 +73,11 @@ function! CopyFileName()
     let @* = expand("%")
 endfunction
 
+function! OpenFileToEditOnLine()
+    let l:line = getline('.')
+    echom "WIP: Line: " . l:line . "-"
+endfunction
+
 function! LineBreak()
     " i+++==============================================================================================+++<esc>
     " i+++==============================================================================================+++<esc>
@@ -127,6 +135,103 @@ function! WordToFiglet()
         silent execute '.!figlet "'.l:line.'"'
     endif
 endfunction
+
+function! CreateVisualTreeFromSelection()
+
+    normal! \<Esc>
+
+    " Get the start and end positions of the visual selection
+    let l:start_pos = getpos("'<")
+    let l:end_pos = getpos("'>")
+
+    " Get the line numbers of the selection
+    let l:start_line = l:start_pos[1]
+    let l:end_line = l:end_pos[1]
+
+    " Iterate through the selected lines and process them
+    for l:line_num in range(l:start_line, l:end_line)
+        let l:line_content = getline(l:line_num)
+        " Do something with the line content (e.g., print it)
+        echo "Line " . l:line_num . ": " . l:line_content
+    endfor
+    "let l:start_pos = getpos("'<")
+    "let l:end_pos = getpos("'>")
+
+    "" Get the line numbers of the selection
+    "let l:start_line = l:start_pos[1]
+    "let l:end_line = l:end_pos[1]
+
+    "" Iterate through the selected lines and process them
+    "for l:line_num in range(l:start_line, l:end_line)
+    "    let l:line_content = getline(l:line_num)
+    "    " Do something with the line content (e.g., print it)
+    "    echo "Line " . l:line_num . ": " . l:line_content
+    "endfor
+endfunction
+
+" Define a function to process the visual selection
+function! ProcessVisualSelection()
+    " Get the start and end positions of the visual selection
+    let l:start_pos = getpos("'<")
+    let l:end_pos = getpos("'>")
+
+    " Get the line numbers of the selection
+    let l:start_line = l:start_pos[1]
+    let l:end_line = l:end_pos[1]
+
+    let lines = getline(l:start_line, l:end_line)
+    if len(lines) == 0
+        return ''
+    endif
+    let l:joined = join(lines, "\n")
+
+    " Iterate through the selected lines and process them
+    for l:line_num in range(l:start_line, l:end_line)
+        let l:line_content = getline(l:line_num)
+        " Do something with the line content (e.g., print it)
+        echo "Line " . l:line_num . ": " . l:line_content
+    endfor
+
+    "let [line_start, column_start] = getpos("'<")[1:2]
+    "let [line_end, column_end] = getpos("'>")[1:2]
+    "let lines = getline(line_start, line_end)
+    "if len(lines) == 0
+    "    return ''
+    "endif
+    "let lines[-1] = lines[-1][: column_end - 2]
+    "let lines[0] = lines[0][column_start - 1:]
+    "let l:joined = join(lines, "\n")
+
+
+
+    let l:res = system('makeTree -s 4 "'.l:joined.'"')
+    "let l:modified = substitute(l:res, '\x00', "\n", "g")
+    "let l:modified = substitute(l:res, '\%x00', "\n", "g")
+    "echom "=".l:res."="
+    let l:modified = substitute(l:res, '[\x0]', "\n", "g")
+    "call setline(1, l:modified)
+    let o = @o
+    let @o = l:modified
+    normal! gv"op
+    let @o=o
+   " let l:modified = substitute(l:res, '[\x0]', "<CR>", "g")
+   " call setline(1, l:modified)
+    "echom "-".l:res."-"
+    
+
+endfunction
+
+" Map a key in visual mode to trigger the function
+"vnoremap <silent> <Leader>p :<C-u>call <SID>RunOnceProcessVisualSelection()<CR>
+
+" Wrapper function to ensure it runs once
+function! s:RunOnceProcessVisualSelection()
+    " Exit visual mode explicitly
+    normal! \<Esc>
+    call ProcessVisualSelection()
+endfunction
+
+
 
 " Notes
 "   l: is scoped to a function
