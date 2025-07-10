@@ -3,11 +3,13 @@ nnoremap <localleader>o :call OpenFileToEditOnLine()<cr>
 nnoremap <localleader>b :call AllMapsToSplit()<cr>
 nnoremap <localleader>w :call ToggleWrap()<cr>
 nnoremap <localleader>t :call CreateTitle()<cr>
+
 vnoremap <silent> <localleader>t :<C-u>call <SID>RunOnceProcessVisualSelection()<cr>
 "vnoremap <localleader>t :call CreateVisualTreeFromSelection()<cr>
 nnoremap <localleader>u :call CreateUnderline()<cr>
 nnoremap <localleader>sf :call CreateSmallFiglet()<cr>
 nnoremap <localleader>J :call MakeJson()<cr>
+nnoremap <localleader>j :call GetJiraTicket()<cr>
 nnoremap <localleader>ca :call CalculateLineBC()<cr>
 nnoremap <localleader>X :call MakeXML()<cr>
 nnoremap <localleader>e :call EchoOutWordSay()<cr>
@@ -283,6 +285,18 @@ function! MakeXML()
     .!xmllint --format -
     set foldmethod=syntax
     set syntax=xml
+endfunction
+
+function! GetJiraTicket()
+    let l:gitdir = system("git status &> /dev/null; printf '%d' $?") 
+    if l:gitdir == "0"
+        let l:branch = system("git symbolic-ref --short HEAD")[:-2]
+        let l:matcher = matchstr(l:branch,'TP-.*')
+        if !empty(l:matcher)
+            let l:ticket = matchstr(l:matcher,'TP-[0-9]\+')
+            call setline('.',l:ticket)
+        endif
+    endif 
 endfunction
 
 function! MakeJson()
