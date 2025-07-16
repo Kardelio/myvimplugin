@@ -9,6 +9,7 @@ vnoremap <silent> <localleader>t :<C-u>call <SID>RunOnceProcessVisualSelection()
 nnoremap <localleader>u :call CreateUnderline()<cr>
 nnoremap <localleader>sf :call CreateSmallFiglet()<cr>
 nnoremap <localleader>J :call MakeJson()<cr>
+nnoremap <localleader>aj :call PerformJQCmdOnArrayOfObjects()<cr>
 nnoremap <localleader>j :call GetJiraTicket()<cr>
 nnoremap <localleader>ca :call CalculateLineBC()<cr>
 nnoremap <localleader>X :call MakeXML()<cr>
@@ -25,6 +26,18 @@ nnoremap <localleader>d :call ConvertToHumanTime()<cr>
 vnoremap tt :<c-u>call MakeTodoItems()<cr>
 nnoremap tt :call MakeTodoItem()<cr>
 nnoremap tp :call MakeTodoItemHighPriority()<cr>
+
+
+function! PerformJQCmdOnArrayOfObjects()
+    let l:userin = input("please type your JQ statement (e.g. 'select(.mergeCommit == true)'):")
+    echom "->".l:userin
+    "silent execute '.!figlet -f cybermedium "'.l:line.'"'
+    silent execute '%!jq "[.[] | '.l:userin.']"'
+    call MakeJson()
+    ":%! jq '.[] | select(.mergeCommit == true)]'
+endfunction
+
+"%!. jq '[.[] | select(.mergeCommit == true)]'
 
 "augroup mygroup 
 "    autocmd!
@@ -302,10 +315,11 @@ endfunction
 function! MakeJson()
     "set foldmethod=syntax
     "set syntax=json
-    :%!jq
+    silent execute '%!jq'
+    ":%!jq
     ":.!jq .
     "noh
-    echom "Converted to JSON nicely"
+    "echom "Converted to JSON nicely"
     set foldmethod=syntax
     set syntax=json
     "normal u
