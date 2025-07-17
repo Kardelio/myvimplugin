@@ -1,3 +1,5 @@
+let s:DEEPLINK_ADB_TIMESTAMP_FILE = "dl_ts.txt"
+
 nnoremap <localleader>y :call CopyFileName()<cr>
 nnoremap <localleader>o :call OpenFileToEditOnLine()<cr>
 nnoremap <localleader>b :call AllMapsToSplit()<cr>
@@ -36,6 +38,71 @@ function! ExtractJustLinks()
     silent execute '%s/\(.*\(\(http\|gyg\)[^ ]\+\).*\)/\2/g'
 endfunction
 
+" This function is set to script private
+" it can only be called from within this script
+function! s:CreateLocalFileInVimData(filePath)
+    let filename = expand('~/.vim/data/'.a:filePath)
+    if !filereadable(filename)
+        call writefile([], filename)
+        echo "File created: " . filename
+        return 0
+    else
+        return 1
+    endif
+endfunction
+
+function! s:GetSingleLineFromFile(filePath)
+    let l:ans = s:GetFileContentsInVimData(a:filePath)
+    if len(l:ans) > 0
+        return l:ans[0]
+    else
+        return ""
+    endif
+endfunction
+
+function! s:GetFileContentsInVimData(filePath)
+    let filename = expand('~/.vim/data/'.a:filePath)
+    if !filereadable(filename)
+        let l:created = s:CreateLocalFileInVimData(a:filePath)
+        if l:created == 0
+            echom 'FILE CREATED'
+        else
+            echom 'FILE NOT CREATED: err'
+        endif
+    endif
+    let lines = readfile(filename)
+    return lines
+endfunction
+
+function! s:OverwriteFileContentsInVimData(filePath, dataChunks)
+    let filename = expand('~/.vim/data/'.a:filePath)
+    call writefile(a:dataChunks, filename)
+endfunction
+
+function! GetSampleData()
+    "NOTE: Just a sample function for file reading and writing
+    "let l:ans = s:GetFileContentsInVimData(s:DEEPLINK_ADB_TIMESTAMP_FILE)
+    let l:ans = s:GetFileContentsInVimData("ben.txt")
+    "echom 'OLD DATA--'.join(l:ans,",").'--'
+    call s:OverwriteFileContentsInVimData('ben.txt',['ttest'])
+endfunction
+
+
+"function! ReadSampleFile()
+"    let filename = expand('~/.vim/data/sample.txt')
+"    if !filereadable(filename)
+"        " File does not exist; create it
+"        "NOTE: i created the dir myself as CBA
+"        let lines = ['This is a new file.', 'Created by Vimscript.']
+"        call writefile(lines, filename)
+"        echo "File created: " . filename
+"    else
+"        echo "File already exists: " . filename
+"        let lines = readfile(filename)
+"        echom '->'.lines.'<-'
+"    endif
+"endfunction
+
 function! ColorEchoTest()
     "highlight MyHighlightGroup ctermfg=Red guifg=Red
     echohl WarningMsg
@@ -64,14 +131,30 @@ function! DeeplinkCheck()
     for i in lines
         redraw
         echo 'Checking... '.i.' ('.l:count.'/'.len(lines).') ['.l:linenum.']'
-        let l:out = system('adb shell am start -a android.intent.action.VIEW -d "'.i.'" &> /dev/null; sleep 1; adb logcat --regex "^BK" -d | tail -n 1')
-        if len(l:out) > 0
-            call append(l:linenum ,split(l:out,"\n"))
-            let l:linenum = l:linenum + len(split(l:out,"\n"))
-
-        else
-            call append(l:linenum,"")
-            let l:linenum = l:linenum + 1
+        if len(i) > 0
+            let l:out = system('adb shell am start -a android.intent.action.VIEW -d "'.i.'" &> /dev/null; sleep 2; adb logcat --regex "^BK" -d | tail -n 1')
+            let l:splitLines = split(l:out,"\n")
+            if len(l:splitLines) > 0
+                let first_element = l:splitLines[0]
+                let l:datestamp = system("echo '".first_element."' | awk '{printf(\"%s%s\", $1, $2)}'")
+                let l:lastts = s:GetSingleLineFromFile(s:DEEPLINK_ADB_TIMESTAMP_FILE)
+                if l:lastts == l:datestamp
+                    echom 'SAME'
+                    "DL FAILED
+                    call append(l:linenum,"FAIL")
+                    let l:linenum = l:linenum + 1
+                else
+                    echom 'NOT SAME'
+                    call s:OverwriteFileContentsInVimData(s:DEEPLINK_ADB_TIMESTAMP_FILE,[l:datestamp])
+                    if len(l:out) > 0
+                        call append(l:linenum ,split(l:out,"\n"))
+                        let l:linenum = l:linenum + len(split(l:out,"\n"))
+                    else
+                        call append(l:linenum,"")
+                        let l:linenum = l:linenum + 1
+                    endif
+                endif
+            endif
         endif
         let l:count += 1
         let l:linenum += 1
