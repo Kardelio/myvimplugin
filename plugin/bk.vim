@@ -3,6 +3,7 @@ nnoremap <localleader>o :call OpenFileToEditOnLine()<cr>
 nnoremap <localleader>b :call AllMapsToSplit()<cr>
 nnoremap <localleader>w :call ToggleWrap()<cr>
 nnoremap <localleader>t :call CreateTitle()<cr>
+nnoremap <localleader>t :call CheckLinesAreFiles()<cr>
 
 vnoremap <silent> <localleader>t :<C-u>call <SID>RunOnceProcessVisualSelection()<cr>
 "vnoremap <localleader>t :call CreateVisualTreeFromSelection()<cr>
@@ -10,6 +11,8 @@ nnoremap <localleader>u :call CreateUnderline()<cr>
 nnoremap <localleader>sf :call CreateSmallFiglet()<cr>
 nnoremap <localleader>J :call MakeJson()<cr>
 nnoremap <localleader>aj :call PerformJQCmdOnArrayOfObjects()<cr>
+"IMPORTANT for visual selections so function just runs once
+vnoremap <localleader>cl :<c-u>call CheckLinesAreFiles()<cr>
 nnoremap <localleader>j :call GetJiraTicket()<cr>
 nnoremap <localleader>ca :call CalculateLineBC()<cr>
 nnoremap <localleader>X :call MakeXML()<cr>
@@ -27,6 +30,38 @@ vnoremap tt :<c-u>call MakeTodoItems()<cr>
 nnoremap tt :call MakeTodoItem()<cr>
 nnoremap tp :call MakeTodoItemHighPriority()<cr>
 
+function! CheckLinesAreFiles()
+    let [line_start, column_start] = getpos("'<")[1:2]
+    echom '-'.line_start
+    let [line_end, column_end] = getpos("'>")[1:2]
+    echom '-'.line_end
+    "return
+    let lines = getline(line_start, line_end)
+    if len(lines) == 0
+        return ''
+    endif
+    let lines[-1] = lines[-1][: column_end - 2]
+    let lines[0] = lines[0][column_start - 1:]
+    let l:joined = join(lines, "\n")
+    let l:count = 1
+    let l:linenum = line_start
+    for i in lines
+        redraw
+        echo 'Checking... '.i.' ('.l:count.'/'.len(lines).')'
+        let l:out = system('find . -name *'.i.'* -not -path "*/build/*"')
+        if len(l:out) > 0
+            call append(l:linenum + (l:linenum - 1),split(l:out,"\n"))
+        else
+            call append(l:linenum + (l:linenum - 1),"")
+        endif
+        let l:count += 1
+        let l:linenum += 1
+    endfor
+    let l:count -= 1
+    redraw
+    echom '--DONE-- ('.l:count.'/'.len(lines).')'
+    return l:joined
+endfunction
 
 function! PerformJQCmdOnArrayOfObjects()
     let l:userin = input("please type your JQ statement (e.g. 'select(.mergeCommit == true)'):")
