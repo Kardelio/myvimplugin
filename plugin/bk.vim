@@ -47,12 +47,15 @@ function! CheckLinesAreFiles()
     let l:linenum = line_start
     for i in lines
         redraw
-        echo 'Checking... '.i.' ('.l:count.'/'.len(lines).')'
+        echo 'Checking... '.i.' ('.l:count.'/'.len(lines).') ['.l:linenum.']'
         let l:out = system('find . -name *'.i.'* -not -path "*/build/*"')
         if len(l:out) > 0
-            call append(l:linenum + (l:linenum - 1),split(l:out,"\n"))
+            call append(l:linenum ,split(l:out,"\n"))
+            let l:linenum = l:linenum + len(split(l:out,"\n"))
+
         else
-            call append(l:linenum + (l:linenum - 1),"")
+            call append(l:linenum,"")
+            let l:linenum = l:linenum + 1
         endif
         let l:count += 1
         let l:linenum += 1
