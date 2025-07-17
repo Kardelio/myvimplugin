@@ -140,18 +140,24 @@ function! DeeplinkCheck()
                 let l:lastts = s:GetSingleLineFromFile(s:DEEPLINK_ADB_TIMESTAMP_FILE)
                 if l:lastts == l:datestamp
                     echom 'SAME'
-                    "DL FAILED
                     call append(l:linenum,"FAIL")
                     let l:linenum = l:linenum + 1
                 else
-                    echom 'NOT SAME'
+                    let l:classname = system("echo '".first_element."' | awk '{printf(\"%s\", $9)}'")
                     call s:OverwriteFileContentsInVimData(s:DEEPLINK_ADB_TIMESTAMP_FILE,[l:datestamp])
-                    if len(l:out) > 0
-                        call append(l:linenum ,split(l:out,"\n"))
-                        let l:linenum = l:linenum + len(split(l:out,"\n"))
-                    else
-                        call append(l:linenum,"")
+                    if l:classname == "null"
+                        echom 'WAS NULL'
+                        call append(l:linenum,"NULL FAIL")
                         let l:linenum = l:linenum + 1
+                    else
+                        echom 'NOT SAME'
+                        if len(l:out) > 0
+                            call append(l:linenum ,split(l:out,"\n"))
+                            let l:linenum = l:linenum + len(split(l:out,"\n"))
+                        else
+                            call append(l:linenum,"")
+                            let l:linenum = l:linenum + 1
+                        endif
                     endif
                 endif
             endif
