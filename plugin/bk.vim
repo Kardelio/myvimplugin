@@ -3,7 +3,7 @@ nnoremap <localleader>o :call OpenFileToEditOnLine()<cr>
 nnoremap <localleader>b :call AllMapsToSplit()<cr>
 nnoremap <localleader>w :call ToggleWrap()<cr>
 nnoremap <localleader>t :call CreateTitle()<cr>
-nnoremap <localleader>t :call CheckLinesAreFiles()<cr>
+nnoremap <localleader>cl :call CheckLinesAreFiles()<cr>
 
 vnoremap <silent> <localleader>t :<C-u>call <SID>RunOnceProcessVisualSelection()<cr>
 "vnoremap <localleader>t :call CreateVisualTreeFromSelection()<cr>
