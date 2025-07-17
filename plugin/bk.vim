@@ -12,6 +12,7 @@ nnoremap <localleader>sf :call CreateSmallFiglet()<cr>
 nnoremap <localleader>J :call MakeJson()<cr>
 nnoremap <localleader>aj :call PerformJQCmdOnArrayOfObjects()<cr>
 "IMPORTANT for visual selections so function just runs once
+vnoremap <localleader>dl :<c-u>call DeeplinkCheck()<cr>
 vnoremap <localleader>cl :<c-u>call CheckLinesAreFiles()<cr>
 nnoremap <localleader>j :call GetJiraTicket()<cr>
 nnoremap <localleader>ca :call CalculateLineBC()<cr>
@@ -29,6 +30,58 @@ nnoremap <localleader>d :call ConvertToHumanTime()<cr>
 vnoremap tt :<c-u>call MakeTodoItems()<cr>
 nnoremap tt :call MakeTodoItem()<cr>
 nnoremap tp :call MakeTodoItemHighPriority()<cr>
+
+function! ExtractJustLinks()
+    echom "---"
+    silent execute 'g!/\(https\|gyg\)/d'
+    silent execute '%s/\(.*\(\(http\|gyg\)[^ ]\+\).*\)/\2/g'
+endfunction
+
+function! ColorEchoTest()
+    "highlight MyHighlightGroup ctermfg=Red guifg=Red
+    echohl WarningMsg
+    echom "This is something"
+    echohl Title
+    echom "This is something"
+    echohl None
+    echom "This sfafs"
+endfunction
+
+function! DeeplinkCheck()
+    let [line_start, column_start] = getpos("'<")[1:2]
+    echom '-'.line_start
+    let [line_end, column_end] = getpos("'>")[1:2]
+    echom '-'.line_end
+    "return
+    let lines = getline(line_start, line_end)
+    if len(lines) == 0
+        return ''
+    endif
+    let lines[-1] = lines[-1][: column_end - 2]
+    let lines[0] = lines[0][column_start - 1:]
+    let l:joined = join(lines, "\n")
+    let l:count = 1
+    let l:linenum = line_start
+    for i in lines
+        redraw
+        echo 'Checking... '.i.' ('.l:count.'/'.len(lines).') ['.l:linenum.']'
+        let l:out = system('adb shell am start -a android.intent.action.VIEW -d "'.i.'" &> /dev/null; sleep 1; adb logcat --regex "^BK" -d | tail -n 1')
+        if len(l:out) > 0
+            call append(l:linenum ,split(l:out,"\n"))
+            let l:linenum = l:linenum + len(split(l:out,"\n"))
+
+        else
+            call append(l:linenum,"")
+            let l:linenum = l:linenum + 1
+        endif
+        let l:count += 1
+        let l:linenum += 1
+    endfor
+    let l:count -= 1
+    redraw
+    echom '--DONE-- ('.l:count.'/'.len(lines).')'
+    return l:joined
+endfunction
 
 function! CheckLinesAreFiles()
     let [line_start, column_start] = getpos("'<")[1:2]
