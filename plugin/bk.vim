@@ -15,7 +15,8 @@ nnoremap <localleader>aj :call PerformJQCmdOnArrayOfObjects()<cr>
 "IMPORTANT for visual selections so function just runs once
 vnoremap <localleader>dl :<c-u>call DeeplinkCheck()<cr>
 vnoremap <localleader>cl :<c-u>call CheckLinesAreFiles()<cr>
-nnoremap <localleader>j :call GetJiraTicket()<cr>
+nnoremap <localleader>jj :call GetJiraTicket()<cr>
+nnoremap <localleader>jb :call GetBranchName()<cr>
 nnoremap <localleader>ca :call CalculateLineBC()<cr>
 nnoremap <localleader>X :call MakeXML()<cr>
 nnoremap <localleader>e :call EchoOutWordSay()<cr>
@@ -477,6 +478,14 @@ function! MakeXML()
     .!xmllint --format -
     set foldmethod=syntax
     set syntax=xml
+endfunction
+
+function! GetBranchName()
+    let l:gitdir = system("git status &> /dev/null; printf '%d' $?") 
+    if l:gitdir == "0"
+        let l:branch = system("git symbolic-ref --short HEAD")[:-2]
+        call setline('.',l:branch)
+    endif 
 endfunction
 
 function! GetJiraTicket()
