@@ -16,6 +16,7 @@ nnoremap <localleader>aj :call PerformJQCmdOnArrayOfObjects()<cr>
 vnoremap <localleader>dl :<c-u>call DeeplinkCheck()<cr>
 vnoremap <localleader>cl :<c-u>call CheckLinesAreFiles()<cr>
 nnoremap <localleader>jj :call GetJiraTicket()<cr>
+nnoremap <localleader>jt :call GetJiraTicketUrl()<cr>
 nnoremap <localleader>jb :call GetBranchName()<cr>
 nnoremap <localleader>ca :call CalculateLineBC()<cr>
 nnoremap <localleader>X :call MakeXML()<cr>
@@ -492,10 +493,23 @@ function! GetJiraTicket()
     let l:gitdir = system("git status &> /dev/null; printf '%d' $?") 
     if l:gitdir == "0"
         let l:branch = system("git symbolic-ref --short HEAD")[:-2]
-        let l:matcher = matchstr(l:branch,'TP-.*')
+        let l:matcher = matchstr(l:branch,'\(TP\|CF\)-.*')
         if !empty(l:matcher)
-            let l:ticket = matchstr(l:matcher,'TP-[0-9]\+')
+            let l:ticket = matchstr(l:matcher,'\(TP\|CF\)-[0-9]\+')
             call setline('.',l:ticket)
+        endif
+    endif 
+endfunction
+
+function! GetJiraTicketUrl()
+    let l:base=expand('$JIRA_TICKETS_BASE_URL') "Set this env var to your jira url
+    let l:gitdir = system("git status &> /dev/null; printf '%d' $?") 
+    if l:gitdir == "0"
+        let l:branch = system("git symbolic-ref --short HEAD")[:-2]
+        let l:matcher = matchstr(l:branch,'\(TP\|CF\)-.*')
+        if !empty(l:matcher)
+            let l:ticket = matchstr(l:matcher,'\(TP\|CF\)-[0-9]\+')
+            call setline('.',"[".l:ticket."](".l:base."/".l:ticket.")")
         endif
     endif 
 endfunction
