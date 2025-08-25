@@ -15,6 +15,8 @@ nnoremap <localleader>aj :call PerformJQCmdOnArrayOfObjects()<cr>
 "IMPORTANT for visual selections so function just runs once
 vnoremap <localleader>dl :<c-u>call DeeplinkCheck()<cr>
 vnoremap <localleader>cl :<c-u>call CheckLinesAreFiles()<cr>
+vnoremap <localleader>mj :<c-u>call MakeSafeJsonObjectFromData()<cr>
+nnoremap <localleader>cd :call GetCommitDescription()<cr>
 nnoremap <localleader>jj :call GetJiraTicket()<cr>
 nnoremap <localleader>jt :call GetJiraTicketUrl()<cr>
 nnoremap <localleader>jb :call GetBranchName()<cr>
@@ -33,6 +35,43 @@ nnoremap <localleader>d :call ConvertToHumanTime()<cr>
 vnoremap tt :<c-u>call MakeTodoItems()<cr>
 nnoremap tt :call MakeTodoItem()<cr>
 nnoremap tp :call MakeTodoItemHighPriority()<cr>
+
+
+"Visual
+function! MakeSafeJsonObjectFromData()
+    let [line_start, column_start] = getpos("'<")[1:2]
+    let [line_end, column_end] = getpos("'>")[1:2]
+    let lines = getline(line_start, line_end)
+    if len(lines) == 0
+        return ''
+    endif
+    let lines[-1] = lines[-1][: column_end - 2]
+    let lines[0] = lines[0][column_start - 1:]
+    let l:joined = join(lines, "\n")
+    let l:count = 1
+    let l:linenum = line_start
+    echom lines
+    for i in lines
+        "redraw
+        if len(i) > 0
+            let l:matcher = matchlist(i, '\([a-zA-Z0-9]\+\)=\([a-zA-Z0-9]\+\)')
+
+            if !empty(l:matcher)
+                echom l:matcher[0]
+                let capture_groups = l:matcher[1:]
+                echom "->".capture_groups[0]
+                echom "->".capture_groups[1]
+                call setline(l:linenum,"OK")
+            else
+                call setline(l:linenum,"NOT")
+            endif
+        endif
+        let l:count += 1
+        let l:linenum += 1
+    endfor
+    "redraw
+    return ''
+endfunction
 
 function! ExtractJustLinks()
     echom "---"
@@ -486,6 +525,16 @@ function! GetBranchName()
     if l:gitdir == "0"
         let l:branch = system("git symbolic-ref --short HEAD")[:-2]
         call setline('.',l:branch)
+    endif 
+endfunction
+
+function! GetCommitDescription()
+    let l:gitdir = system("git status &> /dev/null; printf '%d' $?") 
+    if l:gitdir == "0"
+        let l:description = system("git log -1 --pretty=%B")[:-2]
+        "call setline('.',l:description)
+        call append(line('.'),split(l:description,"\n"))
+
     endif 
 endfunction
 
