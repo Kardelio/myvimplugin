@@ -26,6 +26,9 @@ nnoremap <localleader>e :call EchoOutWordSay()<cr>
 vnoremap <localleader>e :<c-u>call SelectionEchoOutWordSay()<cr>
 vnoremap <localleader>6 :<c-u>call Base64EncodeLines()<cr>
 vnoremap <localleader>0 :<c-u>call Base64DecodeLines()<cr>
+
+nnoremap <localleader>R :<c-u>call ReplaceAcrossFile()<cr>
+
 nnoremap <localleader>f :call WordToFiglet()<cr>
 nnoremap <localleader>de :call TranslateToGerman()<cr>
 nnoremap <localleader>en :call TranslateToEnglish()<cr>
@@ -318,6 +321,14 @@ function! LineBreak()
     " i+++==============================================================================================+++<esc>
 endfunction
 
+function! ReplaceAcrossFile()
+    let l:wordUnderCursor = expand("<cword>")
+    echom "Replacing: " .l:wordUnderCursor
+    let l:name = input('Enter name: ')
+    echom "NEW: " .l:name
+    silent execute '%s/\<'.l:wordUnderCursor.'\>/'.l:name.'/g'
+endfunction
+
 function! ConvertToHumanTime()
     let l:wordUnderCursor = expand("<cword>")
     "echom "Word on: " . l:wordUnderCursor . ""
@@ -449,10 +460,10 @@ function! ProcessVisualSelection()
     let @o = l:modified
     normal! gv"op
     let @o=o
-   " let l:modified = substitute(l:res, '[\x0]', "<CR>", "g")
-   " call setline(1, l:modified)
+    " let l:modified = substitute(l:res, '[\x0]', "<CR>", "g")
+    " call setline(1, l:modified)
     "echom "-".l:res."-"
-    
+
 
 endfunction
 
@@ -668,7 +679,7 @@ endfunction
 
 function! MakeFoldMarker()
     normal i# ===== {{{
-            normal ooi#}}}
+    normal ooi#}}}
     normal OO
     execute "normal! i\<tab>"
     set foldmethod=marker
