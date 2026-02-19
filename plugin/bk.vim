@@ -553,9 +553,9 @@ function! GetJiraTicket()
     let l:gitdir = system("git status &> /dev/null; printf '%d' $?") 
     if l:gitdir == "0"
         let l:branch = system("git symbolic-ref --short HEAD")[:-2]
-        let l:matcher = matchstr(l:branch,'\(TP\|CF\)-.*')
+        let l:matcher = matchstr(l:branch,'\(REE\)-.*')
         if !empty(l:matcher)
-            let l:ticket = matchstr(l:matcher,'\(TP\|CF\)-[0-9]\+')
+            let l:ticket = matchstr(l:matcher,'\(REE\)-[0-9]\+')
             call setline('.',l:ticket)
         endif
     endif 
