@@ -27,6 +27,8 @@ vnoremap <localleader>e :<c-u>call SelectionEchoOutWordSay()<cr>
 vnoremap <localleader>6 :<c-u>call Base64EncodeLines()<cr>
 vnoremap <localleader>0 :<c-u>call Base64DecodeLines()<cr>
 
+nnoremap <localleader>cc :call CleanClaudeOutput()<cr>
+
 nnoremap <localleader>R :<c-u>call ReplaceAcrossFile()<cr>
 
 nnoremap <localleader>f :call WordToFiglet()<cr>
@@ -685,6 +687,43 @@ function! MakeFoldMarker()
     set foldmethod=marker
     normal kk^f=
     "nnoremap <leader>m i# ___ {{{<esc>o#}}}<esc>O<tab><esc>
+endfunction
+
+function! CleanClaudeOutput()
+    let l:lines = getline(1, '$')
+    let l:result = []
+
+    for l:i in range(len(l:lines))
+        let l:line = l:lines[l:i]
+
+        if l:line =~# '^  '
+            let l:stripped = l:line[2:]
+        else
+            let l:stripped = l:line
+        endif
+
+        if l:stripped =~# '^\s*$'
+            call add(l:result, '')
+            continue
+        endif
+
+        let l:is_continuation = 0
+        if len(l:result) > 0 && l:result[-1] !~# '^\s*$'
+            if l:stripped !~# '^\d\+[.)]\s' && l:stripped !~# '^[-*+]\s' && l:stripped !~# '^#' && l:stripped !~# '^>'
+                let l:is_continuation = 1
+            endif
+        endif
+
+        if l:is_continuation
+            let l:result[-1] = l:result[-1] . ' ' . l:stripped
+        else
+            call add(l:result, l:stripped)
+        endif
+    endfor
+
+    silent %delete _
+    call setline(1, l:result)
+    echom 'Claude output cleaned (' . len(l:lines) . ' lines -> ' . len(l:result) . ' lines)'
 endfunction
 
 
