@@ -20,6 +20,8 @@ nnoremap <localleader>cd :call GetCommitDescription()<cr>
 nnoremap <localleader>jj :call GetJiraTicket()<cr>
 nnoremap <localleader>jt :call GetJiraTicketUrl()<cr>
 nnoremap <localleader>jb :call GetBranchName()<cr>
+nnoremap <localleader>gh :call OpenGithubLine()<cr>
+vnoremap <localleader>gh :<c-u>call OpenGithubLineRange()<cr>
 nnoremap <localleader>ca :call CalculateLineBC()<cr>
 nnoremap <localleader>X :call MakeXML()<cr>
 nnoremap <localleader>e :call EchoOutWordSay()<cr>
@@ -574,6 +576,86 @@ function! GetJiraTicketUrl()
             call setline('.',"[".l:ticket."](".l:base."/".l:ticket.")")
         endif
     endif 
+endfunction
+
+" Converts a git remote URL (ssh, git@ or https) into the https://github.com/user/repo form
+" Returns '' if the remote isn't a github.com remote
+function! s:GithubRemoteToHttps(remote)
+    let l:remote = substitute(a:remote, '\.git$', '', '')
+    if l:remote =~# '^git@github\.com:'
+        return 'https://github.com/' . substitute(l:remote, '^git@github\.com:', '', '')
+    elseif l:remote =~# '^ssh://git@github\.com/'
+        return 'https://github.com/' . substitute(l:remote, '^ssh://git@github\.com/', '', '')
+    elseif l:remote =~# '^https\?://github\.com/'
+        return substitute(l:remote, '^http://', 'https://', '')
+    else
+        return ''
+    endif
+endfunction
+
+" Builds the github.com/.../blob/<branch>/<path> url (no #L fragment) for the current buffer
+" Uses the current branch, not master, so links stay correct on feature branches
+function! s:BuildGithubBlobUrl()
+    let l:gitcheck = system('git rev-parse --is-inside-work-tree 2>/dev/null')
+    if l:gitcheck !~# '^true'
+        echom 'Not inside a git repository'
+        return ''
+    endif
+
+    let l:remote = system('git config --get remote.origin.url 2>/dev/null')[:-2]
+    if empty(l:remote)
+        echom "No 'origin' remote found"
+        return ''
+    endif
+
+    let l:base = s:GithubRemoteToHttps(l:remote)
+    if empty(l:base)
+        echom 'Remote is not a GitHub repository: ' . l:remote
+        return ''
+    endif
+
+    let l:branch = system('git symbolic-ref --short HEAD 2>/dev/null')[:-2]
+    if empty(l:branch)
+        echom 'Could not determine current branch (detached HEAD?)'
+        return ''
+    endif
+
+    let l:root = system('git rev-parse --show-toplevel 2>/dev/null')[:-2]
+    let l:filepath = expand('%:p')
+    if l:filepath[:len(l:root)-1] !=# l:root
+        echom 'File is not inside the repo root'
+        return ''
+    endif
+    let l:relpath = l:filepath[len(l:root)+1:]
+
+    return l:base . '/blob/' . l:branch . '/' . l:relpath
+endfunction
+
+function! s:OpenUrl(url)
+    call system('open ' . shellescape(a:url))
+    echom 'Opened: ' . a:url
+endfunction
+
+function! OpenGithubLine() abort
+    let l:url = s:BuildGithubBlobUrl()
+    if empty(l:url)
+        return
+    endif
+    call s:OpenUrl(l:url . '#L' . line('.'))
+endfunction
+
+function! OpenGithubLineRange() abort
+    let [l:line_start, l:col_start] = getpos("'<")[1:2]
+    let [l:line_end, l:col_end] = getpos("'>")[1:2]
+    let l:url = s:BuildGithubBlobUrl()
+    if empty(l:url)
+        return
+    endif
+    if l:line_start == l:line_end
+        call s:OpenUrl(l:url . '#L' . l:line_start)
+    else
+        call s:OpenUrl(l:url . '#L' . l:line_start . '-L' . l:line_end)
+    endif
 endfunction
 
 function! MakeJson()
