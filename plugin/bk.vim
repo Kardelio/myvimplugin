@@ -22,6 +22,7 @@ nnoremap <localleader>jt :call GetJiraTicketUrl()<cr>
 nnoremap <localleader>jb :call GetBranchName()<cr>
 nnoremap <localleader>gh :call OpenGithubLine()<cr>
 vnoremap <localleader>gh :<c-u>call OpenGithubLineRange()<cr>
+nnoremap <localleader>ggb :call ToggleGitBlameGutter()<cr>
 nnoremap <localleader>ca :call CalculateLineBC()<cr>
 nnoremap <localleader>X :call MakeXML()<cr>
 nnoremap <localleader>e :call EchoOutWordSay()<cr>
@@ -658,10 +659,107 @@ function! OpenGithubLineRange() abort
     endif
 endfunction
 
+" ===== Git Blame Gutter =====
+" Shows git blame (short hash, author, date) for every line of the current
+" file in a scrollbound gutter window to the left, instead of just echoing
+" the blame for the line under the cursor.
+function! s:GitBlameParseLine(entry) abort
+    let l:m = matchlist(a:entry, '^\^\?\([0-9a-f]\+\)\s\+(\(.\{-}\)\s\+\(\d\{4}-\d\{2}-\d\{2}\)\s\+\d\+)')
+    if empty(l:m)
+        return ''
+    endif
+    let l:hash = l:m[1][0:6]
+    let l:author = substitute(l:m[2], '\s\+$', '', '')
+    if len(l:author) > 15
+        let l:author = l:author[0:14]
+    endif
+    return printf('%-7s %-15s %s', l:hash, l:author, l:m[3])
+endfunction
+
+" Called from inside the gutter window (e.g. via q) to close it and
+" restore the source window's settings
+function! s:CloseGitBlameGutter() abort
+    let l:srcwinid = exists('b:git_blame_src_winid') ? b:git_blame_src_winid : 0
+    close
+    if l:srcwinid > 0 && win_gotoid(l:srcwinid)
+        setlocal noscrollbind nocursorbind
+        if exists('w:git_blame_gutter_winid')
+            unlet w:git_blame_gutter_winid
+        endif
+    endif
+endfunction
+
+function! ToggleGitBlameGutter() abort
+    " cursor is currently inside the blame gutter itself: close it
+    if exists('w:is_git_blame_gutter') && w:is_git_blame_gutter
+        call s:CloseGitBlameGutter()
+        return
+    endif
+
+    " this window already has a blame gutter open next to it: close it
+    if exists('w:git_blame_gutter_winid')
+        let l:gutterwinid = w:git_blame_gutter_winid
+        if win_gotoid(l:gutterwinid)
+            call s:CloseGitBlameGutter()
+        else
+            unlet w:git_blame_gutter_winid
+        endif
+        return
+    endif
+
+    let l:gitcheck = system('git rev-parse --is-inside-work-tree 2>/dev/null')
+    if l:gitcheck !~# '^true'
+        echom 'Not inside a git repository'
+        return
+    endif
+
+    let l:file = expand('%:p')
+    if empty(l:file) || !filereadable(l:file)
+        echom 'No file to blame'
+        return
+    endif
+
+    let l:raw = systemlist('git blame --date=short -- ' . shellescape(l:file))
+    if v:shell_error
+        echom 'git blame failed: ' . (len(l:raw) > 0 ? l:raw[0] : 'unknown error')
+        return
+    endif
+
+    let l:lines = map(copy(l:raw), 's:GitBlameParseLine(v:val)')
+    let l:width = 4
+    for l:entry in l:lines
+        let l:width = max([l:width, len(l:entry)])
+    endfor
+
+    let l:srcwinid = win_getid()
+    let l:topline = line('w0')
+    let l:curline = line('.')
+
+    execute 'leftabove ' . (l:width + 1) . 'vnew'
+    setlocal buftype=nofile bufhidden=wipe noswapfile
+    setlocal nowrap nonumber norelativenumber nocursorline
+    setlocal foldcolumn=0 signcolumn=no
+    setlocal filetype=gitblamegutter
+    call setline(1, l:lines)
+    setlocal nomodifiable nomodified
+    let w:is_git_blame_gutter = 1
+    let b:git_blame_src_winid = l:srcwinid
+    let l:gutterwinid = win_getid()
+    nnoremap <buffer> <silent> q :call <SID>CloseGitBlameGutter()<CR>
+    setlocal scrollbind cursorbind
+
+    call win_gotoid(l:srcwinid)
+    let w:git_blame_gutter_winid = l:gutterwinid
+    setlocal scrollbind cursorbind
+    execute 'normal! ' . l:topline . 'Gzt' . l:curline . 'G'
+    syncbind
+endfunction
+
 function! MakeJson()
     "set foldmethod=syntax
     "set syntax=json
     silent execute '%!jq'
+    "%!jq -c to collapse all json
     ":%!jq
     ":.!jq .
     "noh
