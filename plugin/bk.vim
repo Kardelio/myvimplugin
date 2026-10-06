@@ -557,11 +557,17 @@ endfunction
 function! GetJiraTicket()
     let l:gitdir = system("git status &> /dev/null; printf '%d' $?") 
     if l:gitdir == "0"
+        "let l:branch = "feat/REE-1234-asdkj-safgf"
         let l:branch = system("git symbolic-ref --short HEAD")[:-2]
+        "-2 strips the newline
         let l:matcher = matchstr(l:branch,'\(REE\)-.*')
+        "^.*\/(REE)-[0-9]+
         if !empty(l:matcher)
-            let l:ticket = matchstr(l:matcher,'\(REE\)-[0-9]\+')
-            call setline('.',l:ticket)
+            "Old way
+            "let l:ticket = matchstr(l:matcher,'\(REE\)-[0-9]\+')
+            let l:ticket = matchstr(l:branch,'^[^/]*/REE-[0-9]\+')
+            let l:ticketCleaned = substitute(l:ticket, '/', ': ', '')
+            call setline('.',l:ticketCleaned)
         endif
     endif 
 endfunction
