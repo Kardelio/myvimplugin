@@ -30,7 +30,8 @@ vnoremap <localleader>e :<c-u>call SelectionEchoOutWordSay()<cr>
 vnoremap <localleader>6 :<c-u>call Base64EncodeLines()<cr>
 vnoremap <localleader>0 :<c-u>call Base64DecodeLines()<cr>
 
-nnoremap <localleader>cc :call CleanClaudeOutput()<cr>
+nnoremap <localleader>cc :%call CleanClaudeOutput()<cr>
+vnoremap <localleader>cc :call CleanClaudeOutput()<cr>
 
 nnoremap <localleader>R :<c-u>call ReplaceAcrossFile()<cr>
 
@@ -875,41 +876,72 @@ function! MakeFoldMarker()
     "nnoremap <leader>m i# ___ {{{<esc>o#}}}<esc>O<tab><esc>
 endfunction
 
-function! CleanClaudeOutput()
-    let l:lines = getline(1, '$')
+" Un-mangle text copied out of Claude Code (2 space indent + hard wrapped lines).
+" Works on a range: normal mode maps it to the whole file, visual mode to the selection.
+function! CleanClaudeOutput() range
+    let l:first = a:firstline
+    let l:last = a:lastline
+    let l:lines = getline(l:first, l:last)
     let l:result = []
+    let l:in_fence = 0
 
-    for l:i in range(len(l:lines))
-        let l:line = l:lines[l:i]
+    for l:raw in l:lines
+        " strip the (up to) 2 space indent Claude adds to every line
+        let l:line = substitute(l:raw, '^ \{1,2}', '', '')
+        let l:line = substitute(l:line, '\s\+$', '', '')
+        let l:is_fence = l:line =~# '^\s*```'
 
-        if l:line =~# '^  '
-            let l:stripped = l:line[2:]
-        else
-            let l:stripped = l:line
+        " fenced code blocks are kept verbatim
+        if l:in_fence
+            call add(l:result, l:line)
+            if l:is_fence
+                let l:in_fence = 0
+            endif
+            continue
+        endif
+        if l:is_fence
+            let l:in_fence = 1
+            call add(l:result, l:line)
+            continue
         endif
 
-        if l:stripped =~# '^\s*$'
+        if l:line =~# '^\s*$'
             call add(l:result, '')
             continue
         endif
 
-        let l:is_continuation = 0
-        if len(l:result) > 0 && l:result[-1] !~# '^\s*$'
-            if l:stripped !~# '^\d\+[.)]\s' && l:stripped !~# '^[-*+]\s' && l:stripped !~# '^#' && l:stripped !~# '^>'
-                let l:is_continuation = 1
-            endif
-        endif
+        " lines that always start a new block
+        let l:is_block_start = l:line =~# '^\s*\([-*+]\|\d\+[.)]\)\s'
+                    \ || l:line =~# '^\s*#'
+                    \ || l:line =~# '^\s*>'
+                    \ || l:line =~# '^\s*|'
+                    \ || l:line =~# '^\s*\([-*_]\)\(\s*\1\)\{2,}\s*$'
+                    \ || l:line =~# '^\s*[\u23fa\u25cf\u23bf]'
 
-        if l:is_continuation
-            let l:result[-1] = l:result[-1] . ' ' . l:stripped
+        " previous output lines that must never absorb the next line
+        let l:prev = len(l:result) > 0 ? l:result[-1] : ''
+        let l:prev_closed = l:prev =~# '^\s*$' || l:prev =~# '^\s*#' || l:prev =~# '^\s*|'
+                    \ || l:prev =~# '^\s*```' || l:prev =~# '^\s*\([-*_]\)\(\s*\1\)\{2,}\s*$'
+
+        if l:is_block_start || l:prev_closed
+            call add(l:result, l:line)
         else
-            call add(l:result, l:stripped)
+            let l:result[-1] = l:prev . ' ' . substitute(l:line, '^\s\+', '', '')
         endif
     endfor
 
-    silent %delete _
-    call setline(1, l:result)
-    echom 'Claude output cleaned (' . len(l:lines) . ' lines -> ' . len(l:result) . ' lines)'
+    " write back only the affected range, leaving the rest of the buffer alone
+    let l:old = l:last - l:first + 1
+    let l:new = len(l:result)
+    if l:new >= l:old
+        call setline(l:first, l:result[0 : l:old - 1])
+        if l:new > l:old
+            call append(l:last, l:result[l:old :])
+        endif
+    else
+        call setline(l:first, l:result)
+        silent execute (l:first + l:new) . ',' . l:last . 'delete _'
+    endif
+    echom 'Claude output cleaned (' . l:old . ' lines -> ' . l:new . ' lines)'
 endfunction
-
 
